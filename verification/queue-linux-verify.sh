@@ -18,3 +18,9 @@ done
 build-queue-linux/optimized calls
 for mode in insque remque valid calls; do APS5_GUEST_COPY_SYSCALL=1 build-queue-linux/optimized "$mode"; done
 APS5_GUEST_COPY_SYSCALL=1 build-queue-linux/optimized volume optimized
+
+g++ "${common[@]}" -c core/libs/tests/GuestQueue.cpp -o build-queue-linux/semantics.o
+g++ "${common[@]}" -Dmain=QueueVerificationMain -c verification/LinuxQueueVerification.cpp -o build-queue-linux/support.o
+g++ -pthread -Wl,--gc-sections -Wl,--wrap=GuestWritable_nid_no_patch build-queue-linux/General.o build-queue-linux/GuestArena.o build-queue-linux/GuestWriteWatch.o build-queue-linux/GuestFaultCopy.o build-queue-linux/semantics.o build-queue-linux/support.o build-queue-linux/queue-optimized.o -o build-queue-linux/semantics
+build-queue-linux/semantics
+APS5_GUEST_COPY_SYSCALL=1 build-queue-linux/semantics
