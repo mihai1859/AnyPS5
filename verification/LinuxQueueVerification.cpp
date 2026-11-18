@@ -1,5 +1,6 @@
 #include "prx/libc/include/Api.hpp"
 #include "prx/libc/include/General.hpp"
+#include "prx/libc/include/RunReport.hpp"
 #include "prx/libc/include/GuestArena.hpp"
 #include "prx/libc/include/specifics/linux/GuestFaultCopy.hpp"
 #include <cerrno>
@@ -10,18 +11,10 @@
 
 int QueueGuardMain(int argc, char** argv);
 
-static std::uint64_t refused = 0;
 static std::size_t probes = 0;
 static std::size_t writes = 0;
 
-extern "C" [[noreturn]] void NotImplementedAt_nid_no_patch(const char* name, const char*, int) {
-    ++refused;
-    throw std::runtime_error(name);
-}
-
-extern "C" std::uint64_t NotImplementedCalls_nid_no_patch() {
-    return refused;
-}
+extern "C" void LibcRunReportMissingFunction_nid_no_patch(const char*, const char*, int) noexcept {}
 
 extern "C" bool __real_GuestWritable_nid_no_patch(void* destination, std::size_t bytes);
 

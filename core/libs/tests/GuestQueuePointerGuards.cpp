@@ -67,6 +67,20 @@ public:
     }
     unsigned char* Start() { return allocation; }
     unsigned char* End() { return allocation + size; }
+    void ReadOnlyTail(const Links& value) {
+#ifdef _WIN32
+        DWORD previous;
+        Check(VirtualProtect(allocation + size, size, PAGE_READWRITE, &previous) != 0);
+#else
+        Check(mprotect(allocation + size, size, PROT_READ | PROT_WRITE) == 0);
+#endif
+        std::memcpy(End() - sizeof(void*), &value, sizeof(value));
+#ifdef _WIN32
+        Check(VirtualProtect(allocation + size, size, PAGE_READONLY, &previous) != 0);
+#else
+        Check(mprotect(allocation + size, size, PROT_READ) == 0);
+#endif
+    }
     void ReadOnly() {
 #ifdef _WIN32
         DWORD previous;
@@ -124,6 +138,13 @@ static void InsqueGuards() {
     refuses(split, &previous);
     std::memcpy(&observed, split, sizeof(observed));
     Check(observed == prefix);
+
+    const Links splitValue{&next, &previous};
+    pages.ReadOnlyTail(splitValue);
+    refuses(split, nullptr);
+    Links splitObserved{};
+    std::memcpy(&splitObserved, split, sizeof(splitObserved));
+    Check(splitObserved.forward == splitValue.forward && splitObserved.back == splitValue.back);
 
     auto* readonly = reinterpret_cast<Links*>(pages.Start());
     *readonly = Links{&next, &previous};
